@@ -23,12 +23,18 @@ public class User {
     @SortNatural
     @OrderBy("title ASC")
     private List<ActivityInstance> activityInstances = new ArrayList<>();
+    private Integer dayStartHour;
+    private Integer dayEndHour;
 
     public User() {
     }
 
     public Integer getId() {
         return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getEmail() {
@@ -61,5 +67,21 @@ public class User {
 
     public void setActivityInstances(List<ActivityInstance> activityInstances) {
         this.activityInstances = activityInstances;
+    }
+
+    public Integer getDayStartHour() {
+        return dayStartHour;
+    }
+
+    public void setDayStartHour(Integer dayStartHour) {
+        this.dayStartHour = dayStartHour;
+    }
+
+    public Integer getDayEndHour() {
+        return dayEndHour;
+    }
+
+    public void setDayEndHour(Integer dayEndHour) {
+        this.dayEndHour = dayEndHour;
     }
 }

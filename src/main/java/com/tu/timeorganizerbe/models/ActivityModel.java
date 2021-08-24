@@ -1,39 +1,22 @@
-package com.tu.timeorganizerbe.entities;
+package com.tu.timeorganizerbe.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import javax.persistence.*;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-public class Activity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ActivityModel {
     private Integer id;
-    @Column(nullable = false)
     private String name;
-    @ManyToOne(targetEntity = User.class)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
-    @JsonIgnoreProperties({"activities", "activityInstances"})
-    private User user;
-    @Column(nullable = false)
+    private Integer userId;
     private String icon;
-    @ManyToOne(targetEntity = ActivityColor.class)
-    @JoinColumn(name = "color", referencedColumnName = "secondaryColor", nullable = false)
-    private ActivityColor color;
-    @Column(nullable = false)
+    private String secondaryColor;
     private int duration;
-    @Column(nullable = false)
     private int frequency;
-    @ElementCollection
     private List<String> dayPreference = new ArrayList<>();
-    @ElementCollection
     private List<String> timePreference = new ArrayList<>();
-    private LocalTime concreteTime;
+    private int concreteTimeHour;
+    private int concreteTimeMinute;
 
-    public Activity() {
+    public ActivityModel() {
     }
 
     public Integer getId() {
@@ -52,12 +35,12 @@ public class Activity {
         this.name = name;
     }
 
-    public User getUser() {
-        return user;
+    public Integer getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 
     public String getIcon() {
@@ -68,12 +51,12 @@ public class Activity {
         this.icon = icon;
     }
 
-    public ActivityColor getColor() {
-        return color;
+    public String getSecondaryColor() {
+        return secondaryColor;
     }
 
-    public void setColor(ActivityColor color) {
-        this.color = color;
+    public void setSecondaryColor(String secondaryColor) {
+        this.secondaryColor = secondaryColor;
     }
 
     public int getDuration() {
@@ -108,11 +91,19 @@ public class Activity {
         this.timePreference = timePreference;
     }
 
-    public LocalTime getConcreteTime() {
-        return concreteTime;
+    public int getConcreteTimeHour() {
+        return concreteTimeHour;
     }
 
-    public void setConcreteTime(LocalTime concreteTime) {
-        this.concreteTime = concreteTime;
+    public void setConcreteTimeHour(int concreteTimeHour) {
+        this.concreteTimeHour = concreteTimeHour;
+    }
+
+    public int getConcreteTimeMinute() {
+        return concreteTimeMinute;
+    }
+
+    public void setConcreteTimeMinute(int concreteTimeMinute) {
+        this.concreteTimeMinute = concreteTimeMinute;
     }
 }

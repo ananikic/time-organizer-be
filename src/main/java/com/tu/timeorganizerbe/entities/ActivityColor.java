@@ -32,11 +32,11 @@ public class ActivityColor {
         this.primaryColor = primaryColor;
     }
 
-    public boolean isLight() {
+    public boolean getIsLight() {
         return isLight;
     }
 
-    public void setLight(boolean light) {
-        isLight = light;
+    public void setIsLight(boolean isLight) {
+        this.isLight = isLight;
     }
 }
