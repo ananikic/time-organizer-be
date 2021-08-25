@@ -9,6 +9,7 @@ import com.tu.timeorganizerbe.repositories.ActivityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -16,6 +17,8 @@ public class ActivityService {
     private final ActivityRepository activityRepo;
     private final ActivityColorRepository colorRepo;
     private final ActivityMapper activityMapper;
+
+    private static final String TIME_PREFERENCE_CONCRETE = "Concrete Time";
 
     @Autowired
     public ActivityService(ActivityRepository activityRepo, ActivityColorRepository colorRepo, ActivityMapper activityMapper) {
@@ -30,6 +33,10 @@ public class ActivityService {
 
     public Activity createActivity(ActivityModel activityModel) {
         Activity activity = this.activityMapper.map(activityModel);
+        if (activityModel.getTimePreference().contains(TIME_PREFERENCE_CONCRETE)) {
+            activity.setConcreteTime(LocalTime.of(activityModel.getConcreteTimeHour(),
+                    activityModel.getConcreteTimeMinute()));
+        }
         return this.activityRepo.save(activity);
     }
 
@@ -38,6 +45,10 @@ public class ActivityService {
         ActivityColor color = this.colorRepo.findById(activityModel.getSecondaryColor()).orElseThrow();
         this.activityMapper.update(activityModel, activity);
         activity.setColor(color);
+        if (activityModel.getTimePreference().contains(TIME_PREFERENCE_CONCRETE)) {
+            activity.setConcreteTime(LocalTime.of(activityModel.getConcreteTimeHour(),
+                    activityModel.getConcreteTimeMinute()));
+        }
         return this.activityRepo.save(activity);
     }
 }
