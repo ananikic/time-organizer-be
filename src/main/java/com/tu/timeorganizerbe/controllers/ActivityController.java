@@ -38,4 +38,10 @@ public class ActivityController {
         Activity activity = this.activityService.updateActivity(activityModel);
         return new ResponseEntity<>(activity, HttpStatus.OK);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteActivity(@PathVariable(value="id") Integer id) {
+        this.activityService.deleteActivity(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

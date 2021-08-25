@@ -51,4 +51,8 @@ public class ActivityService {
         }
         return this.activityRepo.save(activity);
     }
+
+    public void deleteActivity(Integer id) {
+        this.activityRepo.delete(this.activityRepo.findById(id).orElseThrow());
+    }
 }
