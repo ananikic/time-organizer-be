@@ -45,10 +45,12 @@ public class ActivityService {
         ActivityColor color = this.colorRepo.findById(activityModel.getSecondaryColor()).orElseThrow();
         this.activityMapper.update(activityModel, activity);
         activity.setColor(color);
+        activity.setConcreteTime(null);
         if (activityModel.getTimePreference().contains(TIME_PREFERENCE_CONCRETE)) {
             activity.setConcreteTime(LocalTime.of(activityModel.getConcreteTimeHour(),
                     activityModel.getConcreteTimeMinute()));
         }
+
         return this.activityRepo.save(activity);
     }
 

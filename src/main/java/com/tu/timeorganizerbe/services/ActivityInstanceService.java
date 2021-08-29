@@ -9,7 +9,12 @@ import com.tu.timeorganizerbe.repositories.ActivityInstanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ActivityInstanceService {
@@ -48,5 +53,48 @@ public class ActivityInstanceService {
 
     public void deleteActivityInstance(Integer id) {
         this.activityInstanceRepo.delete(this.activityInstanceRepo.findById(id).orElseThrow());
+    }
+
+    public List<ActivityInstance> findInstancesBetweenDates(LocalDateTime start, LocalDateTime end, Integer userId) {
+        List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
+        List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
+        return Stream.concat(startBetween.stream(), endBetween.stream())
+                .collect(Collectors.toList());
+    }
+
+    public List<ActivityInstance> findMorningInstances(LocalDate date, Integer userId) {
+        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(5, 0));
+        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(11, 59));
+        List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
+        List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
+        return Stream.concat(startBetween.stream(), endBetween.stream())
+                .collect(Collectors.toList());
+    }
+
+    public List<ActivityInstance> findAfternoonInstances(LocalDate date, Integer userId) {
+        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(12, 0));
+        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(17, 0));
+        List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
+        List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
+        return Stream.concat(startBetween.stream(), endBetween.stream())
+                .collect(Collectors.toList());
+    }
+
+    public List<ActivityInstance> findEveningInstances(LocalDate date, Integer userId) {
+        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(17, 1));
+        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(4, 59));
+        List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
+        List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
+        return Stream.concat(startBetween.stream(), endBetween.stream())
+                .collect(Collectors.toList());
+    }
+
+    public List<ActivityInstance> findWholeDayInstances(LocalDate date, Integer userId) {
+        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(0, 0));
+        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(23, 59));
+        List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
+        List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
+        return Stream.concat(startBetween.stream(), endBetween.stream())
+                .collect(Collectors.toList());
     }
 }

@@ -13,6 +13,14 @@ public class ActivityInstanceModel {
     public ActivityInstanceModel() {
     }
 
+    public ActivityInstanceModel(String title, Integer userId, LocalDateTime start, LocalDateTime end, String secondaryColor) {
+        this.title = title;
+        this.userId = userId;
+        this.start = start;
+        this.end = end;
+        this.secondaryColor = secondaryColor;
+    }
+
     public Integer getId() {
         return id;
     }
