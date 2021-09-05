@@ -1,10 +1,6 @@
 package com.tu.timeorganizerbe.entities;
 
-import org.hibernate.annotations.SortNatural;
-
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 public class User {
@@ -15,14 +11,6 @@ public class User {
     private String email;
     @Column(nullable = false)
     private String username;
-    @OneToMany(mappedBy = "user")
-    @SortNatural
-    @OrderBy("name ASC")
-    private List<Activity> activities = new ArrayList<>();
-    @OneToMany(mappedBy = "user")
-    @SortNatural
-    @OrderBy("title ASC")
-    private List<ActivityInstance> activityInstances = new ArrayList<>();
     private Integer dayStartHour;
     private Integer dayEndHour;
 
@@ -51,22 +39,6 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public List<Activity> getActivities() {
-        return activities;
-    }
-
-    public void setActivities(List<Activity> activities) {
-        this.activities = activities;
-    }
-
-    public List<ActivityInstance> getActivityInstances() {
-        return activityInstances;
-    }
-
-    public void setActivityInstances(List<ActivityInstance> activityInstances) {
-        this.activityInstances = activityInstances;
     }
 
     public Integer getDayStartHour() {
