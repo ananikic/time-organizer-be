@@ -2,6 +2,7 @@ package com.tu.timeorganizerbe.services;
 
 import com.tu.timeorganizerbe.entities.Activity;
 import com.tu.timeorganizerbe.entities.ActivityInstance;
+import com.tu.timeorganizerbe.entities.User;
 import com.tu.timeorganizerbe.models.ActivityInstanceModel;
 import com.tu.timeorganizerbe.models.PlanGenerationModel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,16 +11,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class PlanGenerationService {
 
     private final ActivityInstanceService activityInstanceService;
+    private final UserService userService;
     private static final String TIME_PREFERENCE_CONCRETE = "Concrete Time";
     private static final String TIME_PREFERENCE_MORNING = "Morning";
     private static final String TIME_PREFERENCE_AFTERNOON = "Afternoon";
@@ -27,9 +26,12 @@ public class PlanGenerationService {
     private static final List<String> WEEK = Arrays.asList("Monday", "Tuesday", "Wednesday",
             "Thursday", "Friday", "Saturday", "Sunday");
 
+    private List<ActivityInstanceModel> failedInstances = new ArrayList<>();
+
     @Autowired
-    public PlanGenerationService(ActivityInstanceService activityInstanceService) {
+    public PlanGenerationService(ActivityInstanceService activityInstanceService, UserService userService) {
         this.activityInstanceService = activityInstanceService;
+        this.userService = userService;
     }
 
     public void generateWeek(PlanGenerationModel planModel) {
@@ -50,6 +52,7 @@ public class PlanGenerationService {
         this.generateConcreteDays(concreteDays, planModel);
         this.generateTimePref(timePreference, planModel);
         this.generateNoPref(noPreferences, planModel);
+        this.generateFailed();
     }
 
     private void generateConcreteDaysAndTime(List<Activity> activities, PlanGenerationModel planModel) {
@@ -179,16 +182,26 @@ public class PlanGenerationService {
         if (startDate == null) {
             // Set at the same time as some other instance
             startDate = this.findRandomStartDate(planModel);
+            LocalDateTime start = LocalDateTime.of(startDate, startTime);
+
+            LocalDateTime end = start.plusMinutes(activity.getDuration());
+            String title = activity.getIcon() + " " + activity.getName();
+
+            ActivityInstanceModel model = new ActivityInstanceModel(title, planModel.getUserId(), start, end,
+                    activity.getColor().getSecondaryColor());
+
+            this.failedInstances.add(model);
+        } else {
+            LocalDateTime start = LocalDateTime.of(startDate, startTime);
+
+            LocalDateTime end = start.plusMinutes(activity.getDuration());
+            String title = activity.getIcon() + " " + activity.getName();
+
+            ActivityInstanceModel model = new ActivityInstanceModel(title, planModel.getUserId(), start, end,
+                    activity.getColor().getSecondaryColor());
+
+            this.activityInstanceService.createActivityInstance(model);
         }
-
-        LocalDateTime start = LocalDateTime.of(startDate, startTime);
-
-        LocalDateTime end = start.plusMinutes(activity.getDuration());
-        String title = activity.getIcon() + " " + activity.getName();
-
-        ActivityInstanceModel model = new ActivityInstanceModel(title, planModel.getUserId(), start, end,
-                activity.getColor().getSecondaryColor());
-        this.activityInstanceService.createActivityInstance(model);
     }
 
     private void createTimePrefInstance(PlanGenerationModel planModel, Activity activity) {
@@ -225,7 +238,8 @@ public class PlanGenerationService {
                 this.getDayAndMonth(weekStart, day)[1],
                 this.getDayAndMonth(weekStart, day)[0]);
         List<ActivityInstance> wholeDayInstances = this.activityInstanceService.findWholeDayInstances(startDate, planModel.getUserId())
-                .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
+
         LocalTime startTime = LocalTime.of(5, 0);
 
         if (wholeDayInstances.size() > 0) {
@@ -254,7 +268,7 @@ public class PlanGenerationService {
 
         LocalDate startDate = LocalDate.of(yearStart, this.getDayAndMonth(weekStart, day)[1], this.getDayAndMonth(weekStart, day)[0]);
         List<ActivityInstance> wholeDayInstances = this.activityInstanceService.findWholeDayInstances(startDate, planModel.getUserId())
-                .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
 
         for (int i = 0; i < numOfInstances; i++) {
             LocalTime startTime = LocalTime.of(5, 0);
@@ -288,7 +302,8 @@ public class PlanGenerationService {
                     this.getDayAndMonth(weekStart, day)[0]);
             List<ActivityInstance> dayInstances = this.activityInstanceService
                     .findWholeDayInstances(proposedStartDate, planModel.getUserId())
-                    .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                    .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
+
             LocalTime proposedStartTime = LocalTime.of(5, 0);
             if (dayInstances.size() > 0) {
                 proposedStartTime = this.findPossibleStartTime(proposedStartDate, activity.getDuration(),
@@ -321,7 +336,8 @@ public class PlanGenerationService {
                     this.getDayAndMonth(weekStart, day)[0]);
             List<ActivityInstance> dayInstances = this.activityInstanceService
                     .findWholeDayInstances(proposedStartDate, planModel.getUserId())
-                    .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                    .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
+
             LocalTime proposedStartTime = LocalTime.of(5, 0);
             if (dayInstances.size() > 0) {
                 proposedStartTime = this.findPossibleStartTime(proposedStartDate, activity.getDuration(),
@@ -381,7 +397,7 @@ public class PlanGenerationService {
 
     private LocalTime getMorningPrefTime(LocalDate startDate, int duration, Integer userId) {
         List<ActivityInstance> morningInstances = this.activityInstanceService.findMorningInstances(startDate, userId)
-                .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
 
         if (morningInstances.size() > 0) {
             return this.findPossibleStartTime(startDate, duration, morningInstances, userId);
@@ -392,7 +408,7 @@ public class PlanGenerationService {
 
     private LocalTime getAfternoonPrefTime(LocalDate startDate, int duration, Integer userId) {
         List<ActivityInstance> afternoonInstances = this.activityInstanceService.findAfternoonInstances(startDate, userId)
-                .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
         if (afternoonInstances.size() > 0) {
             return this.findPossibleStartTime(startDate, duration, afternoonInstances, userId);
         } else {
@@ -402,7 +418,7 @@ public class PlanGenerationService {
 
     private LocalTime getEveningPrefTime(LocalDate startDate, int duration, Integer userId) {
         List<ActivityInstance> eveningInstances = this.activityInstanceService.findEveningInstances(startDate, userId)
-                .stream().sorted(Comparator.comparing(ActivityInstance::getStart)).collect(Collectors.toList());
+                .stream().sorted(Comparator.comparing(ActivityInstance::getEnd).reversed()).collect(Collectors.toList());
 
         if (eveningInstances.size() > 0) {
             return this.findPossibleStartTime(startDate, duration, eveningInstances, userId);
@@ -452,8 +468,13 @@ public class PlanGenerationService {
 
     private LocalTime findPossibleStartTimeWhen(LocalDate startDate, int duration, Integer userId, String when) {
         LocalTime proposedStartTime = LocalTime.of(5, 0);
+        User user = this.userService.findUser(userId);
         if ("Morning".equalsIgnoreCase(when)) {
-            proposedStartTime = LocalTime.of(5, 0);
+            int morningStartHour = 5;
+            if (user.getDayStartHour() > morningStartHour) {
+                morningStartHour = user.getDayStartHour();
+            }
+            proposedStartTime = LocalTime.of(morningStartHour, 0);
         } else if ("Afternoon".equalsIgnoreCase(when)) {
             proposedStartTime = LocalTime.of(12, 0);
         } else if ("Evening".equalsIgnoreCase(when)) {
@@ -476,9 +497,14 @@ public class PlanGenerationService {
         int yearStart = weekStart.getYear();
         LocalDate startDate = LocalDate.of(yearStart,
                 this.getDayAndMonth(weekStart, day)[1], this.getDayAndMonth(weekStart, day)[0]);
-        LocalTime startTime = LocalTime.of(9, 0);
+        LocalTime startTime = LocalTime.of(5, 0);
+        User user = this.userService.findUser(planModel.getUserId());
         if (activity.getTimePreference().contains("Morning")) {
-            startTime = LocalTime.of(9, 0);
+            int morningStartHour = 5;
+            if (user.getDayStartHour() > morningStartHour) {
+                morningStartHour = user.getDayStartHour();
+            }
+            startTime = LocalTime.of(morningStartHour, 0);
         } else if (activity.getTimePreference().contains("Afternoon")) {
             startTime = LocalTime.of(12, 0);
         } else if (activity.getTimePreference().contains("Evening")) {
@@ -491,7 +517,7 @@ public class PlanGenerationService {
 
         ActivityInstanceModel model = new ActivityInstanceModel(title, planModel.getUserId(), start, end,
                 activity.getColor().getSecondaryColor());
-        this.activityInstanceService.createActivityInstance(model);
+        this.failedInstances.add(model);
     }
 
     private void createConcreteDayInstanceAlt(PlanGenerationModel planModel, Activity activity, String day) {
@@ -506,7 +532,14 @@ public class PlanGenerationService {
 
         ActivityInstanceModel model = new ActivityInstanceModel(title, planModel.getUserId(), start, end,
                 activity.getColor().getSecondaryColor());
-        this.activityInstanceService.createActivityInstance(model);
+        this.failedInstances.add(model);
+    }
+
+    private void generateFailed() {
+        for (ActivityInstanceModel model : this.failedInstances) {
+            this.activityInstanceService.createActivityInstance(model);
+        }
+        this.failedInstances = new ArrayList<>();
     }
 
     private LocalDate findRandomStartDate(PlanGenerationModel planModel) {

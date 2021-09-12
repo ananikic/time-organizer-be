@@ -2,10 +2,12 @@ package com.tu.timeorganizerbe.services;
 
 import com.tu.timeorganizerbe.entities.ActivityColor;
 import com.tu.timeorganizerbe.entities.ActivityInstance;
+import com.tu.timeorganizerbe.entities.User;
 import com.tu.timeorganizerbe.mappers.ActivityInstanceMapper;
 import com.tu.timeorganizerbe.models.ActivityInstanceModel;
 import com.tu.timeorganizerbe.repositories.ActivityColorRepository;
 import com.tu.timeorganizerbe.repositories.ActivityInstanceRepository;
+import com.tu.timeorganizerbe.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +22,15 @@ import java.util.stream.Stream;
 public class ActivityInstanceService {
     private final ActivityInstanceRepository activityInstanceRepo;
     private final ActivityColorRepository colorRepo;
+    private final UserRepository userRepo;
     private final ActivityInstanceMapper activityInstanceMapper;
 
     @Autowired
     public ActivityInstanceService(ActivityInstanceRepository activityInstanceRepo,
-                                   ActivityColorRepository colorRepo, ActivityInstanceMapper activityInstanceMapper) {
+                                   ActivityColorRepository colorRepo, UserRepository userRepo, ActivityInstanceMapper activityInstanceMapper) {
         this.activityInstanceRepo = activityInstanceRepo;
         this.colorRepo = colorRepo;
+        this.userRepo = userRepo;
         this.activityInstanceMapper = activityInstanceMapper;
     }
 
@@ -63,8 +67,15 @@ public class ActivityInstanceService {
     }
 
     public List<ActivityInstance> findMorningInstances(LocalDate date, Integer userId) {
-        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(5, 0));
+        int morningStartHour = 5;
+        User user = this.userRepo.findById(userId).orElseThrow();
+        if (user.getDayStartHour() > morningStartHour) {
+            morningStartHour = user.getDayStartHour();
+        }
+
+        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(morningStartHour, 0));
         LocalDateTime end = LocalDateTime.of(date, LocalTime.of(11, 59));
+
         List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
         List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
         return Stream.concat(startBetween.stream(), endBetween.stream())
@@ -81,8 +92,15 @@ public class ActivityInstanceService {
     }
 
     public List<ActivityInstance> findEveningInstances(LocalDate date, Integer userId) {
+        int eveningEndHour = 4;
+        User user = this.userRepo.findById(userId).orElseThrow();
+        LocalDateTime end = LocalDateTime.of(date.plusDays(1), LocalTime.of(eveningEndHour, 59));
+        if (!user.getDayEndHour().equals(24)) {
+            eveningEndHour = user.getDayEndHour();
+            end = LocalDateTime.of(date, LocalTime.of(eveningEndHour, 59));
+        }
         LocalDateTime start = LocalDateTime.of(date, LocalTime.of(17, 1));
-        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(4, 59));
+
         List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
         List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
         return Stream.concat(startBetween.stream(), endBetween.stream())
@@ -90,8 +108,12 @@ public class ActivityInstanceService {
     }
 
     public List<ActivityInstance> findWholeDayInstances(LocalDate date, Integer userId) {
-        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(0, 0));
-        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(23, 59));
+        User user = this.userRepo.findById(userId).orElseThrow();
+        int startHour = user.getDayStartHour();
+        int endHour = user.getDayEndHour() - 1;
+
+        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(startHour, 0));
+        LocalDateTime end = LocalDateTime.of(date, LocalTime.of(endHour, 59));
         List<ActivityInstance> startBetween = this.activityInstanceRepo.findAllByUserIdAndStartBetween(userId, start, end);
         List<ActivityInstance> endBetween = this.activityInstanceRepo.findAllByUserIdAndEndBetween(userId, start, end);
         return Stream.concat(startBetween.stream(), endBetween.stream())
